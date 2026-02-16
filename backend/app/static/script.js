@@ -1,11 +1,37 @@
 const statuses = ["OPEN", "IN_PROGRESS", "BLOCKED", "CLOSED"];
 
+let currentFilter = "ALL";
+let allTasks = [];
+
+// async function loadTasks() {
+//     const res = await fetch("/tasks");
+//     const tasks = await res.json();
+
+//     renderStats(tasks);
+//     renderBoard(tasks);
+// }
+
 async function loadTasks() {
     const res = await fetch("/tasks");
-    const tasks = await res.json();
+    allTasks = await res.json();
 
-    renderStats(tasks);
-    renderBoard(tasks);
+    applyFilter();
+}
+
+function applyFilter() {
+    let filteredTasks = allTasks;
+
+    if (currentFilter !== "ALL") {
+        filteredTasks = allTasks.filter(t => t.status === currentFilter);
+    }
+
+    renderStats(filteredTasks);
+    renderBoard(filteredTasks);
+}
+
+function setFilter(status) {
+    currentFilter = status;
+    applyFilter();
 }
 
 function renderStats(tasks) {

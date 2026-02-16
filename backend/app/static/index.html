@@ -15,6 +15,15 @@
     <div class="row mb-4" id="statsRow">
     </div>
 
+    <!-- Filter Buttons -->
+    <div class="mb-3">
+        <button class="btn btn-outline-secondary me-2" onclick="setFilter('ALL')">All</button>
+        <button class="btn btn-outline-primary me-2" onclick="setFilter('OPEN')">Open</button>
+        <button class="btn btn-outline-warning me-2" onclick="setFilter('IN_PROGRESS')">In Progress</button>
+        <button class="btn btn-outline-danger me-2" onclick="setFilter('BLOCKED')">Blocked</button>
+        <button class="btn btn-outline-success me-2" onclick="setFilter('CLOSED')">Closed</button>
+    </div>
+
     <!-- Add Task Button -->
     <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#taskModal">
         + Add Task
