@@ -1,12 +1,39 @@
 .column {
     min-height: 500px;
     background: #f8f9fa;
-    padding: 10px;
-    border-radius: 10px;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
 }
 
 .task-card {
     cursor: grab;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    transition: 0.2s;
+}
+
+.task-card:hover {
+    transform: scale(1.02);
+}
+
+.status-title {
+    font-weight: 600;
     margin-bottom: 10px;
+}
+
+.stat-card {
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+}
+
+.OPEN { background-color: #0d6efd; }
+.IN_PROGRESS { background-color: #ffc107; }
+.BLOCKED { background-color: #dc3545; }
+.CLOSED { background-color: #198754; }
+
+.priority-badge {
+    font-size: 0.75rem;
 }
 

@@ -4,42 +4,73 @@ async function loadTasks() {
     const res = await fetch("/tasks");
     const tasks = await res.json();
 
+    renderStats(tasks);
+    renderBoard(tasks);
+}
+
+function renderStats(tasks) {
+    const statsRow = document.getElementById("statsRow");
+    statsRow.innerHTML = "";
+
+    statuses.forEach(status => {
+        const count = tasks.filter(t => t.status === status).length;
+
+        statsRow.innerHTML += `
+            <div class="col-md-3">
+                <div class="stat-card ${status}">
+                    <h5>${status.replace("_", " ")}</h5>
+                    <h3>${count}</h3>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function renderBoard(tasks) {
     const board = document.getElementById("board");
     board.innerHTML = "";
 
     statuses.forEach(status => {
-        const col = document.createElement("div");
-        col.className = "col-md-3";
-        col.innerHTML = `
-            <h5>${status}</h5>
-            <div class="column" 
-                ondrop="drop(event, '${status}')" 
-                ondragover="allowDrop(event)" 
-                id="${status}">
+        board.innerHTML += `
+            <div class="col-md-3">
+                <div class="status-title">${status.replace("_", " ")}</div>
+                <div class="column" id="${status}"
+                    ondrop="drop(event, '${status}')"
+                    ondragover="allowDrop(event)">
+                </div>
             </div>
         `;
-        board.appendChild(col);
     });
 
     tasks.forEach(task => {
-        const card = document.createElement("div");
-        card.className = "card task-card";
-        card.draggable = true;
-        card.id = task.id;
-        card.ondragstart = drag;
+        const priorityColor = getPriorityColor(task.priority);
 
-        card.innerHTML = `
-            <div class="card-body">
-                <h6>${task.title}</h6>
-                <small>${task.priority}</small>
+        const card = `
+            <div class="card task-card" draggable="true"
+                ondragstart="drag(event)"
+                id="${task.id}">
+                <div class="card-body">
+                    <h6>${task.title}</h6>
+                    <p class="small">${task.description || ""}</p>
+                    <span class="badge bg-${priorityColor} priority-badge">
+                        ${task.priority}
+                    </span>
+                </div>
             </div>
         `;
 
-        document.getElementById(task.status).appendChild(card);
+        document.getElementById(task.status).innerHTML += card;
     });
 }
 
+function getPriorityColor(priority) {
+    if (priority === "HIGH") return "danger";
+    if (priority === "MEDIUM") return "warning";
+    return "secondary";
+}
+
 function allowDrop(ev) { ev.preventDefault(); }
+
 function drag(ev) { ev.dataTransfer.setData("id", ev.target.id); }
 
 async function drop(ev, status) {
@@ -55,15 +86,21 @@ async function drop(ev, status) {
     loadTasks();
 }
 
-async function showAddModal() {
-    const title = prompt("Task title:");
+async function createTask() {
+    const title = document.getElementById("taskTitle").value;
+    const description = document.getElementById("taskDesc").value;
+    const priority = document.getElementById("taskPriority").value;
+
     if (!title) return;
 
     await fetch("/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title })
+        body: JSON.stringify({ title, description, priority })
     });
+
+    document.getElementById("taskTitle").value = "";
+    document.getElementById("taskDesc").value = "";
 
     loadTasks();
 }
