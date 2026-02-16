@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from .database import Base
 import enum
 from sqlalchemy import Date
+from sqlalchemy import Boolean
 
 class StatusEnum(str, enum.Enum):
     OPEN = "OPEN"
@@ -24,6 +25,7 @@ class Task(Base):
     status = Column(Enum(StatusEnum), default=StatusEnum.OPEN)
     priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM)
     due_date = Column(Date, nullable=True)
+    overdue_notified = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

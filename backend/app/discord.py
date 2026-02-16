@@ -37,7 +37,7 @@ def send_task_created(task):
         ]
     }
 
-    requests.post(WEBHOOK_URL, json=payload)
+    requests.post(WEBHOOK_URL, json=payload, timeout=5)
 
 
 def send_status_update(task):
@@ -58,7 +58,7 @@ def send_status_update(task):
         ]
     }
 
-    requests.post(WEBHOOK_URL, json=payload)
+    requests.post(WEBHOOK_URL, json=payload, timeout=5)
 
 
 def send_task_deleted(title):
@@ -78,4 +78,24 @@ def send_task_deleted(title):
         ]
     }
 
-    requests.post(WEBHOOK_URL, json=payload)
+    requests.post(WEBHOOK_URL, json=payload, timeout=5)
+
+def send_overdue_alert(task):
+    if not WEBHOOK_URL:
+        return
+
+    payload = {
+        "embeds": [
+            {
+                "title": "⏰ Overdue Task Alert",
+                "color": 15158332,  # Red
+                "fields": [
+                    {"name": "Title", "value": task.title, "inline": False},
+                    {"name": "Due Date", "value": str(task.due_date), "inline": False},
+                    {"name": "Status", "value": task.status.value, "inline": False}
+                ]
+            }
+        ]
+    }
+
+    requests.post(WEBHOOK_URL, json=payload, timeout=5)

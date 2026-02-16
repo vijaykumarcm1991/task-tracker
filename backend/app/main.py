@@ -9,8 +9,13 @@ import time
 from sqlalchemy.exc import OperationalError
 from datetime import date
 from .discord import send_task_created, send_status_update, send_task_deleted
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+from .discord import send_overdue_alert
 
 app = FastAPI()
+
+scheduler = BackgroundScheduler()
 
 def get_db():
     db = SessionLocal()
@@ -50,6 +55,11 @@ def startup():
             time.sleep(5)
     else:
         raise Exception("❌ Database not ready after retries")
+
+    if not scheduler.running:
+        scheduler.add_job(check_overdue_tasks, "interval", minutes=5)
+        scheduler.start()
+        print("⏰ Overdue task scheduler started (runs every 5 minutes)")
 
 @app.get("/tasks")
 def get_tasks(db: Session = Depends(get_db)):
@@ -100,9 +110,34 @@ def update_task(task_id: int, data: TaskUpdate, db: Session = Depends(get_db)):
     for key, value in data.dict(exclude_unset=True).items():
         setattr(task, key, value)
 
+    # 🔥 Reset overdue flag if due_date changed
+    if "due_date" in data.dict(exclude_unset=True):
+        task.overdue_notified = False
+
     db.commit()
     db.refresh(task)
     return task
+
+def check_overdue_tasks():
+    db = SessionLocal()
+    try:
+        today = datetime.utcnow().date()
+
+        overdue_tasks = db.query(models.Task).filter(
+            models.Task.due_date != None,
+            models.Task.due_date < today,
+            models.Task.status != models.StatusEnum.CLOSED,
+            models.Task.overdue_notified == False
+        ).all()
+
+        for task in overdue_tasks:
+            send_overdue_alert(task)
+            task.overdue_notified = True
+
+        db.commit()
+
+    finally:
+        db.close()
 
 # Serve Frontend
 app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
