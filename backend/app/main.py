@@ -14,6 +14,8 @@ from datetime import datetime
 from .discord import send_overdue_alert
 from .auth import hash_password, verify_password, create_access_token, get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, constr, validator
+import re
 
 app = FastAPI()
 
@@ -42,6 +44,18 @@ class TaskUpdate(BaseModel):
     priority: Optional[str] = None
     due_date: Optional[date] = None
     status: Optional[str] = None
+
+class UserCreate(BaseModel):
+    username: constr(min_length=3, max_length=50)
+    password: constr(min_length=8, max_length=72)
+
+    @validator("password")
+    def password_strength(cls, value):
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[0-9]", value):
+            raise ValueError("Password must contain at least one number")
+        return value
 
 # Routes
 
@@ -227,17 +241,19 @@ def send_daily_summary():
         db.close()
 
 @app.post("/register")
-def register(username: str, password: str, db: Session = Depends(get_db)):
-    existing = db.query(models.User).filter(models.User.username == username).first()
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.User).filter(models.User.username == user.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    user = models.User(
-        username=username,
-        hashed_password=hash_password(password)
+    new_user = models.User(
+        username=user.username,
+        hashed_password=hash_password(user.password)
     )
-    db.add(user)
+
+    db.add(new_user)
     db.commit()
+
     return {"message": "User created"}
 
 @app.post("/login")

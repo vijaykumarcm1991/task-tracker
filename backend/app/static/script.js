@@ -3,6 +3,17 @@ const statuses = ["OPEN", "IN_PROGRESS", "BLOCKED", "CLOSED"];
 let currentFilter = "ALL";
 let allTasks = [];
 let currentSort = "NONE";
+let token = localStorage.getItem("token");
+
+function showApp() {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("appSection").style.display = "block";
+}
+
+function showLogin() {
+    document.getElementById("loginSection").style.display = "block";
+    document.getElementById("appSection").style.display = "none";
+}
 
 function toggleDarkMode() {
     document.body.classList.toggle("dark-mode");
@@ -14,10 +25,72 @@ function toggleDarkMode() {
     btn.innerText = isDark ? "☀ Light Mode" : "🌙 Dark Mode";
 }
 
-async function loadTasks() {
-    const res = await fetch("/tasks");
-    allTasks = await res.json();
+async function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
 
+    const formData = new URLSearchParams();
+    formData.append("username", username);
+    formData.append("password", password);
+
+    const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData
+    });
+
+    if (!res.ok) {
+        alert("Invalid credentials");
+        return;
+    }
+
+    const data = await res.json();
+    localStorage.setItem("token", data.access_token);
+    token = data.access_token;
+
+    showApp();
+    loadTasks();
+}
+
+async function register() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    const res = await fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+    });
+
+    if (!res.ok) {
+        alert("Registration failed");
+        return;
+    }
+
+    alert("User created. Please login.");
+}
+
+async function loadTasks() {
+
+    // 🔒 Prevent API call if no token
+    if (!token) {
+        showLogin();
+        return;
+    }
+
+    const res = await fetch("/tasks", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    // 🔐 Auto logout if token expired
+    if (res.status === 401) {
+        logout();
+        return;
+    }
+
+    allTasks = await res.json();
     applyFilter();
 }
 
@@ -157,7 +230,10 @@ async function drop(ev, status) {
 
     await fetch(`/tasks/${id}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
         body: JSON.stringify({ status })
     });
 
@@ -175,14 +251,20 @@ async function createTask() {
     if (editingTaskId) {
         await fetch(`/tasks/${editingTaskId}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
             body: JSON.stringify({ title, description, priority, due_date })
         });
         editingTaskId = null;
     } else {
         await fetch("/tasks", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
             body: JSON.stringify({ title, description, priority, due_date })
         });
     }
@@ -204,10 +286,7 @@ function isOverdue(task) {
 let editingTaskId = null;
 
 async function editTask(id) {
-    const res = await fetch("/tasks");
-    const tasks = await res.json();
-    const task = tasks.find(t => t.id === id);
-
+    const task = allTasks.find(t => t.id === id);
     if (!task) return;
 
     editingTaskId = id;
@@ -228,7 +307,10 @@ async function deleteTask(event, id) {
     if (!confirmDelete) return;
 
     await fetch(`/tasks/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
     });
 
     loadTasks();
@@ -243,7 +325,20 @@ function applySavedTheme() {
     }
 }
 
+function logout() {
+    localStorage.removeItem("token");
+    token = null;
+    allTasks = [];
+    document.getElementById("board").innerHTML = "";
+    document.getElementById("statsRow").innerHTML = "";
+    showLogin();
+}
+
 applySavedTheme();
 
-loadTasks();
-
+if (token) {
+    showApp();
+    loadTasks();
+} else {
+    showLogin();
+}

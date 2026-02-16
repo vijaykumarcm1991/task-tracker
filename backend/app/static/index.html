@@ -7,73 +7,92 @@
 </head>
 <body class="bg-light">
 
-<div class="container-fluid p-4">
+<!-- LOGIN SCREEN -->
+<div class="container mt-5" id="loginSection">
+    <div class="card p-4 shadow-sm" style="max-width: 400px; margin:auto;">
+        <h4 class="mb-3 text-center">Login</h4>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0">🚀 Task Tracker</h2>
-        <button class="btn btn-outline-dark" onclick="toggleDarkMode()" id="themeToggle">
-            🌙 Dark Mode
+        <input type="text" id="username" class="form-control mb-3" placeholder="Username">
+        <input type="password" id="password" class="form-control mb-3" placeholder="Password">
+
+        <button class="btn btn-primary w-100 mb-2" onclick="login()">Login</button>
+        <button class="btn btn-outline-secondary w-100" onclick="register()">Register</button>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appSection" style="display:none;">
+    <!-- your existing dashboard content goes here -->
+      <div class="container-fluid p-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0">🚀 Task Tracker</h2>
+            <button class="btn btn-outline-dark me-2" onclick="toggleDarkMode()" id="themeToggle">
+                🌙 Dark Mode
+            </button>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Analytics Cards -->
+        <div class="row mb-4" id="statsRow">
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="mb-3">
+            <button class="btn btn-outline-secondary me-2" onclick="setFilter('ALL')">All</button>
+            <button class="btn btn-outline-primary me-2" onclick="setFilter('OPEN')">Open</button>
+            <button class="btn btn-outline-warning me-2" onclick="setFilter('IN_PROGRESS')">In Progress</button>
+            <button class="btn btn-outline-danger me-2" onclick="setFilter('BLOCKED')">Blocked</button>
+            <button class="btn btn-outline-success me-2" onclick="setFilter('CLOSED')">Closed</button>
+        </div>
+
+        <!-- Sorting Controls -->
+        <div class="mb-3">
+            <select class="form-select w-auto d-inline-block" onchange="setSort(this.value)">
+                <option value="NONE">Sort: None</option>
+                <option value="DUE_ASC">Due Date ↑ (Earliest First)</option>
+                <option value="DUE_DESC">Due Date ↓ (Latest First)</option>
+                <option value="PRIORITY_HIGH">Priority: High → Low</option>
+                <option value="PRIORITY_LOW">Priority: Low → High</option>
+            </select>
+        </div>
+
+        <!-- Add Task Button -->
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#taskModal">
+            + Add Task
         </button>
+
+        <!-- Kanban Board -->
+        <div class="row" id="board"></div>
+
     </div>
 
-    <!-- Analytics Cards -->
-    <div class="row mb-4" id="statsRow">
+    <!-- Modal -->
+    <div class="modal fade" id="taskModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add Task</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="text" id="taskTitle" class="form-control mb-3" placeholder="Task title">
+            <textarea id="taskDesc" class="form-control mb-3" placeholder="Description"></textarea>
+            <select id="taskPriority" class="form-select">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HIGH">High</option>        
+            </select>
+            <input type="date" id="taskDueDate" class="form-control mt-3">
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" onclick="createTask()">Save Task</button>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <!-- Filter Buttons -->
-    <div class="mb-3">
-        <button class="btn btn-outline-secondary me-2" onclick="setFilter('ALL')">All</button>
-        <button class="btn btn-outline-primary me-2" onclick="setFilter('OPEN')">Open</button>
-        <button class="btn btn-outline-warning me-2" onclick="setFilter('IN_PROGRESS')">In Progress</button>
-        <button class="btn btn-outline-danger me-2" onclick="setFilter('BLOCKED')">Blocked</button>
-        <button class="btn btn-outline-success me-2" onclick="setFilter('CLOSED')">Closed</button>
-    </div>
-
-    <!-- Sorting Controls -->
-    <div class="mb-3">
-        <select class="form-select w-auto d-inline-block" onchange="setSort(this.value)">
-            <option value="NONE">Sort: None</option>
-            <option value="DUE_ASC">Due Date ↑ (Earliest First)</option>
-            <option value="DUE_DESC">Due Date ↓ (Latest First)</option>
-            <option value="PRIORITY_HIGH">Priority: High → Low</option>
-            <option value="PRIORITY_LOW">Priority: Low → High</option>
-        </select>
-    </div>
-
-    <!-- Add Task Button -->
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#taskModal">
-        + Add Task
-    </button>
-
-    <!-- Kanban Board -->
-    <div class="row" id="board"></div>
-
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="taskModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Add Task</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="text" id="taskTitle" class="form-control mb-3" placeholder="Task title">
-        <textarea id="taskDesc" class="form-control mb-3" placeholder="Description"></textarea>
-        <select id="taskPriority" class="form-select">
-            <option value="LOW">Low</option>
-            <option value="MEDIUM" selected>Medium</option>
-            <option value="HIGH">High</option>        
-        </select>
-        <input type="date" id="taskDueDate" class="form-control mt-3">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" onclick="createTask()">Save Task</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>

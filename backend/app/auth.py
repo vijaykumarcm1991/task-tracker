@@ -23,9 +23,12 @@ def get_db():
         db.close()
 
 def hash_password(password: str):
+    # bcrypt max length = 72 bytes
+    password = password[:72]
     return pwd_context.hash(password)
 
 def verify_password(plain, hashed):
+    plain = plain[:72]
     return pwd_context.verify(plain, hashed)
 
 def create_access_token(data: dict):
