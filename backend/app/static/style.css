@@ -1,0 +1,12 @@
+.column {
+    min-height: 500px;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.task-card {
+    cursor: grab;
+    margin-bottom: 10px;
+}
+
