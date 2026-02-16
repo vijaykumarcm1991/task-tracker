@@ -49,6 +49,7 @@ function renderBoard(tasks) {
             <div class="card task-card ${isOverdue(task) ? 'border-danger border-3' : ''}"
 	    	draggable="true"
                 ondragstart="drag(event)"
+		onclick="editTask(${task.id})"
                 id="${task.id}">
                 <div class="card-body">
                     <h6>${task.title}</h6>
@@ -100,11 +101,20 @@ async function createTask() {
 
     if (!title) return;
 
-    await fetch("/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, priority })
-    });
+    if (editingTaskId) {
+        await fetch(`/tasks/${editingTaskId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description, priority, due_date })
+        });
+        editingTaskId = null;
+    } else {
+        await fetch("/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description, priority, due_date })
+        });
+    }
 
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskDesc").value = "";
@@ -118,6 +128,26 @@ function isOverdue(task) {
 
     const today = new Date().toISOString().split("T")[0];
     return task.due_date < today;
+}
+
+let editingTaskId = null;
+
+async function editTask(id) {
+    const res = await fetch("/tasks");
+    const tasks = await res.json();
+    const task = tasks.find(t => t.id === id);
+
+    if (!task) return;
+
+    editingTaskId = id;
+
+    document.getElementById("taskTitle").value = task.title;
+    document.getElementById("taskDesc").value = task.description || "";
+    document.getElementById("taskPriority").value = task.priority;
+    document.getElementById("taskDueDate").value = task.due_date || "";
+
+    const modal = new bootstrap.Modal(document.getElementById("taskModal"));
+    modal.show();
 }
 
 loadTasks();
