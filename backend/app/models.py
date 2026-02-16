@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, Enum, TIMESTAMP
 from sqlalchemy.sql import func
 from .database import Base
 import enum
+from sqlalchemy import Date
 
 class StatusEnum(str, enum.Enum):
     OPEN = "OPEN"
@@ -22,6 +23,7 @@ class Task(Base):
     description = Column(Text)
     status = Column(Enum(StatusEnum), default=StatusEnum.OPEN)
     priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM)
+    due_date = Column(Date, nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

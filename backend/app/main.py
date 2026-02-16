@@ -7,6 +7,7 @@ from .database import engine, SessionLocal
 from . import models
 import time
 from sqlalchemy.exc import OperationalError
+from datetime import date
 
 app = FastAPI()
 
@@ -22,6 +23,7 @@ class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
     priority: Optional[str] = "MEDIUM"
+    due_date: Optional[date] = None
 
 class TaskUpdateStatus(BaseModel):
     status: str
@@ -50,7 +52,8 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     new_task = models.Task(
         title=task.title,
         description=task.description,
-        priority=task.priority
+        priority=task.priority,
+        due_date=task.due_date
     )
     db.add(new_task)
     db.commit()

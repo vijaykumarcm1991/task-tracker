@@ -46,13 +46,15 @@ function renderBoard(tasks) {
         const priorityColor = getPriorityColor(task.priority);
 
         const card = `
-            <div class="card task-card" draggable="true"
+            <div class="card task-card ${isOverdue(task) ? 'border-danger border-3' : ''}"
+	    	draggable="true"
                 ondragstart="drag(event)"
                 id="${task.id}">
                 <div class="card-body">
                     <h6>${task.title}</h6>
                     <p class="small">${task.description || ""}</p>
-                    <span class="badge bg-${priorityColor} priority-badge">
+		    ${task.due_date ? `<p class="small text-muted">Due: ${task.due_date}</p>` : ""}
+		    <span class="badge bg-${priorityColor} priority-badge">
                         ${task.priority}
                     </span>
                 </div>
@@ -71,7 +73,11 @@ function getPriorityColor(priority) {
 
 function allowDrop(ev) { ev.preventDefault(); }
 
-function drag(ev) { ev.dataTransfer.setData("id", ev.target.id); }
+function drag(ev) {
+    const card = ev.target.closest(".task-card");
+    if (!card) return;
+    ev.dataTransfer.setData("id", card.id);
+}
 
 async function drop(ev, status) {
     ev.preventDefault();
@@ -90,6 +96,7 @@ async function createTask() {
     const title = document.getElementById("taskTitle").value;
     const description = document.getElementById("taskDesc").value;
     const priority = document.getElementById("taskPriority").value;
+    const due_date = document.getElementById("taskDueDate").value;
 
     if (!title) return;
 
@@ -101,8 +108,16 @@ async function createTask() {
 
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskDesc").value = "";
+    document.getElementById("taskDueDate").value = "";
 
     loadTasks();
+}
+
+function isOverdue(task) {
+    if (!task.due_date || task.status === "CLOSED") return false;
+
+    const today = new Date().toISOString().split("T")[0];
+    return task.due_date < today;
 }
 
 loadTasks();
