@@ -4,6 +4,8 @@ from .database import Base
 import enum
 from sqlalchemy import Date
 from sqlalchemy import Boolean
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 
 class StatusEnum(str, enum.Enum):
     OPEN = "OPEN"
@@ -28,4 +30,12 @@ class Task(Base):
     overdue_notified = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User")
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), unique=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)

@@ -6,3 +6,5 @@ python-dotenv
 cryptography
 requests
 apscheduler
+passlib[bcrypt]
+python-jose

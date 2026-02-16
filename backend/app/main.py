@@ -12,6 +12,8 @@ from .discord import send_task_created, send_status_update, send_task_deleted
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from .discord import send_overdue_alert
+from .auth import hash_password, verify_password, create_access_token, get_current_user
+from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI()
 
@@ -70,16 +72,20 @@ def startup():
         print("⏰ Scheduler started (overdue + daily summary)")
 
 @app.get("/tasks")
-def get_tasks(db: Session = Depends(get_db)):
-    return db.query(models.Task).all()
+def get_tasks(current_user: models.User = Depends(get_current_user),
+              db: Session = Depends(get_db)):
+    return db.query(models.Task).filter(models.Task.user_id == current_user.id).all()
 
 @app.post("/tasks")
-def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+def create_task(task: TaskCreate,
+                current_user: models.User = Depends(get_current_user),
+                db: Session = Depends(get_db)):
     new_task = models.Task(
         title=task.title,
         description=task.description,
         priority=task.priority,
-        due_date=task.due_date
+        due_date=task.due_date,
+        user_id=current_user.id
     )
     db.add(new_task)
     db.commit()
@@ -88,19 +94,30 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     return new_task
 
 @app.put("/tasks/{task_id}/status")
-def update_status(task_id: int, data: TaskUpdateStatus, db: Session = Depends(get_db)):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+def update_status(task_id: int,
+                  data: TaskUpdateStatus,
+                  current_user: models.User = Depends(get_current_user),
+                  db: Session = Depends(get_db)):
+    task = db.query(models.Task).filter(
+        models.Task.id == task_id,
+        models.Task.user_id == current_user.id
+    ).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    task.status = data.status
+    task.status = models.StatusEnum(data.status)
     db.commit()
     send_status_update(task)
     return {"message": "Status updated"}
 
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+def delete_task(task_id: int,
+                current_user: models.User = Depends(get_current_user),
+                db: Session = Depends(get_db)):
+    task = db.query(models.Task).filter(
+        models.Task.id == task_id,
+        models.Task.user_id == current_user.id
+    ).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     task_title = task.title
@@ -110,16 +127,23 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     return {"message": "Task deleted"}
 
 @app.put("/tasks/{task_id}")
-def update_task(task_id: int, data: TaskUpdate, db: Session = Depends(get_db)):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+def update_task(task_id: int,
+                data: TaskUpdate,
+                current_user: models.User = Depends(get_current_user),
+                db: Session = Depends(get_db)):
+    task = db.query(models.Task).filter(
+        models.Task.id == task_id,
+        models.Task.user_id == current_user.id
+    ).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    for key, value in data.dict(exclude_unset=True).items():
+    update_data = data.dict(exclude_unset=True)
+
+    for key, value in update_data.items():
         setattr(task, key, value)
 
-    # 🔥 Reset overdue flag if due_date changed
-    if "due_date" in data.dict(exclude_unset=True):
+    if "due_date" in update_data:
         task.overdue_notified = False
 
     db.commit()
@@ -201,6 +225,29 @@ def send_daily_summary():
 
     finally:
         db.close()
+
+@app.post("/register")
+def register(username: str, password: str, db: Session = Depends(get_db)):
+    existing = db.query(models.User).filter(models.User.username == username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    user = models.User(
+        username=username,
+        hashed_password=hash_password(password)
+    )
+    db.add(user)
+    db.commit()
+    return {"message": "User created"}
+
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_access_token({"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
 
 # Serve Frontend
 app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
