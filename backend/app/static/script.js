@@ -47,15 +47,24 @@ function renderBoard(tasks) {
 
         const card = `
             <div class="card task-card ${isOverdue(task) ? 'border-danger border-3' : ''}"
-	    	draggable="true"
+                draggable="true"
                 ondragstart="drag(event)"
-		onclick="editTask(${task.id})"
+                onclick="editTask(${task.id})"
                 id="${task.id}">
-                <div class="card-body">
+                <div class="card-body position-relative">
+
+                    <!-- Delete Button -->
+                    <button class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2"
+                        onclick="deleteTask(event, ${task.id})">
+                        ✕
+                    </button>
+
                     <h6>${task.title}</h6>
                     <p class="small">${task.description || ""}</p>
-		    ${task.due_date ? `<p class="small text-muted">Due: ${task.due_date}</p>` : ""}
-		    <span class="badge bg-${priorityColor} priority-badge">
+
+                    ${task.due_date ? `<p class="small text-muted">Due: ${task.due_date}</p>` : ""}
+
+                    <span class="badge bg-${priorityColor} priority-badge">
                         ${task.priority}
                     </span>
                 </div>
@@ -148,6 +157,19 @@ async function editTask(id) {
 
     const modal = new bootstrap.Modal(document.getElementById("taskModal"));
     modal.show();
+}
+
+async function deleteTask(event, id) {
+    event.stopPropagation(); // Prevent opening edit modal
+
+    const confirmDelete = confirm("Are you sure you want to delete this task?");
+    if (!confirmDelete) return;
+
+    await fetch(`/tasks/${id}`, {
+        method: "DELETE"
+    });
+
+    loadTasks();
 }
 
 loadTasks();
