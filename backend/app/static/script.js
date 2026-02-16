@@ -2,14 +2,7 @@ const statuses = ["OPEN", "IN_PROGRESS", "BLOCKED", "CLOSED"];
 
 let currentFilter = "ALL";
 let allTasks = [];
-
-// async function loadTasks() {
-//     const res = await fetch("/tasks");
-//     const tasks = await res.json();
-
-//     renderStats(tasks);
-//     renderBoard(tasks);
-// }
+let currentSort = "NONE";
 
 async function loadTasks() {
     const res = await fetch("/tasks");
@@ -18,15 +11,51 @@ async function loadTasks() {
     applyFilter();
 }
 
-function applyFilter() {
-    let filteredTasks = allTasks;
+// function applyFilter() {
+//     let filteredTasks = allTasks;
 
+//     if (currentFilter !== "ALL") {
+//         filteredTasks = allTasks.filter(t => t.status === currentFilter);
+//     }
+
+//     renderStats(filteredTasks);
+//     renderBoard(filteredTasks);
+// }
+
+function applyFilter() {
+    let filteredTasks = [...allTasks];
+
+    // Apply filter
     if (currentFilter !== "ALL") {
-        filteredTasks = allTasks.filter(t => t.status === currentFilter);
+        filteredTasks = filteredTasks.filter(t => t.status === currentFilter);
+    }
+
+    // Apply sorting
+    if (currentSort === "DUE_ASC") {
+        filteredTasks.sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
+    }
+
+    if (currentSort === "DUE_DESC") {
+        filteredTasks.sort((a, b) => (b.due_date || "").localeCompare(a.due_date || ""));
+    }
+
+    if (currentSort === "PRIORITY_HIGH") {
+        const order = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+        filteredTasks.sort((a, b) => order[b.priority] - order[a.priority]);
+    }
+
+    if (currentSort === "PRIORITY_LOW") {
+        const order = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+        filteredTasks.sort((a, b) => order[a.priority] - order[b.priority]);
     }
 
     renderStats(filteredTasks);
     renderBoard(filteredTasks);
+}
+
+function setSort(value) {
+    currentSort = value;
+    applyFilter();
 }
 
 function setFilter(status) {

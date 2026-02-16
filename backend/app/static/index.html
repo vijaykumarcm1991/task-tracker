@@ -24,6 +24,17 @@
         <button class="btn btn-outline-success me-2" onclick="setFilter('CLOSED')">Closed</button>
     </div>
 
+    <!-- Sorting Controls -->
+    <div class="mb-3">
+        <select class="form-select w-auto d-inline-block" onchange="setSort(this.value)">
+            <option value="NONE">Sort: None</option>
+            <option value="DUE_ASC">Due Date ↑ (Earliest First)</option>
+            <option value="DUE_DESC">Due Date ↓ (Latest First)</option>
+            <option value="PRIORITY_HIGH">Priority: High → Low</option>
+            <option value="PRIORITY_LOW">Priority: Low → High</option>
+        </select>
+    </div>
+
     <!-- Add Task Button -->
     <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#taskModal">
         + Add Task
@@ -48,9 +59,9 @@
         <select id="taskPriority" class="form-select">
             <option value="LOW">Low</option>
             <option value="MEDIUM" selected>Medium</option>
-            <option value="HIGH">High</option>
-	<input type="date" id="taskDueDate" class="form-control mt-3">
+            <option value="HIGH">High</option>        
         </select>
+        <input type="date" id="taskDueDate" class="form-control mt-3">
       </div>
       <div class="modal-footer">
         <button class="btn btn-success" onclick="createTask()">Save Task</button>
