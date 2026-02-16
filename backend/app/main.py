@@ -8,6 +8,7 @@ from . import models
 import time
 from sqlalchemy.exc import OperationalError
 from datetime import date
+from .discord import send_discord_message
 
 app = FastAPI()
 
@@ -65,6 +66,9 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
+    send_discord_message(
+        f"🆕 Task Created\n📌 Title: {new_task.title}\n⚡ Priority: {new_task.priority.value}"
+    )
     return new_task
 
 @app.put("/tasks/{task_id}/status")
@@ -75,6 +79,9 @@ def update_status(task_id: int, data: TaskUpdateStatus, db: Session = Depends(ge
 
     task.status = data.status
     db.commit()
+    send_discord_message(
+        f"🔄 Task Updated: **{task.title}** → Status changed to **{task.status.value}**"
+    )
     return {"message": "Status updated"}
 
 @app.delete("/tasks/{task_id}")
@@ -82,9 +89,12 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-
+    task_title = task.title
     db.delete(task)
     db.commit()
+    send_discord_message(
+        f"🗑️ Task Deleted: **{task_title}**"
+    )
     return {"message": "Task deleted"}
 
 @app.put("/tasks/{task_id}")

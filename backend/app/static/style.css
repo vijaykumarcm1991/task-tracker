@@ -37,3 +37,37 @@
     font-size: 0.75rem;
 }
 
+body.dark-mode {
+    background-color: #121212 !important;
+    color: #f1f1f1;
+}
+
+.dark-mode .column {
+    background-color: #1e1e1e;
+}
+
+.dark-mode .card {
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+.dark-mode .stat-card {
+    opacity: 0.9;
+}
+
+.dark-mode .modal-content {
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+.dark-mode .form-control,
+.dark-mode .form-select {
+    background-color: #1e1e1e;
+    color: white;
+    border-color: #444;
+}
+
+.dark-mode .btn-outline-dark {
+    border-color: #ccc;
+    color: #ccc;
+}

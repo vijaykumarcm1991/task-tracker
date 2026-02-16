@@ -4,23 +4,22 @@ let currentFilter = "ALL";
 let allTasks = [];
 let currentSort = "NONE";
 
+function toggleDarkMode() {
+    document.body.classList.toggle("dark-mode");
+
+    const isDark = document.body.classList.contains("dark-mode");
+    localStorage.setItem("darkMode", isDark);
+
+    const btn = document.getElementById("themeToggle");
+    btn.innerText = isDark ? "☀ Light Mode" : "🌙 Dark Mode";
+}
+
 async function loadTasks() {
     const res = await fetch("/tasks");
     allTasks = await res.json();
 
     applyFilter();
 }
-
-// function applyFilter() {
-//     let filteredTasks = allTasks;
-
-//     if (currentFilter !== "ALL") {
-//         filteredTasks = allTasks.filter(t => t.status === currentFilter);
-//     }
-
-//     renderStats(filteredTasks);
-//     renderBoard(filteredTasks);
-// }
 
 function applyFilter() {
     let filteredTasks = [...allTasks];
@@ -32,11 +31,19 @@ function applyFilter() {
 
     // Apply sorting
     if (currentSort === "DUE_ASC") {
-        filteredTasks.sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
+        filteredTasks.sort((a, b) => {
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return a.due_date.localeCompare(b.due_date);
+        });
     }
 
     if (currentSort === "DUE_DESC") {
-        filteredTasks.sort((a, b) => (b.due_date || "").localeCompare(a.due_date || ""));
+        filteredTasks.sort((a, b) => {
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return b.due_date.localeCompare(a.due_date);
+        });
     }
 
     if (currentSort === "PRIORITY_HIGH") {
@@ -226,6 +233,17 @@ async function deleteTask(event, id) {
 
     loadTasks();
 }
+
+function applySavedTheme() {
+    const saved = localStorage.getItem("darkMode");
+
+    if (saved === "true") {
+        document.body.classList.add("dark-mode");
+        document.getElementById("themeToggle").innerText = "☀ Light Mode";
+    }
+}
+
+applySavedTheme();
 
 loadTasks();
 

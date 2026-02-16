@@ -5,9 +5,8 @@ services:
     image: mysql:8.0
     container_name: task_mysql
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: taskdb
+    env_file:
+      - .env
     ports:
       - "3307:3306"
     volumes:
@@ -27,12 +26,8 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
-    environment:
-      DB_HOST: mysql
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: taskdb
+    env_file:
+      - .env
 
 volumes:
   mysql_data:
-
