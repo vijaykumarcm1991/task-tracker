@@ -16,6 +16,8 @@ from .auth import hash_password, verify_password, create_access_token, get_curre
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, constr, validator
 import re
+from fastapi import Query
+from sqlalchemy import or_
 
 app = FastAPI()
 
@@ -86,9 +88,51 @@ def startup():
         print("⏰ Scheduler started (overdue + daily summary)")
 
 @app.get("/tasks")
-def get_tasks(current_user: models.User = Depends(get_current_user),
-              db: Session = Depends(get_db)):
-    return db.query(models.Task).filter(models.Task.user_id == current_user.id).all()
+def get_tasks(
+    status: str | None = Query(None),
+    sort: str | None = Query(None),
+    search: str | None = Query(None),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    query = db.query(models.Task).filter(
+        models.Task.user_id == current_user.id
+    )
+
+    # 🔎 Filter by status
+    if status:
+        try:
+            query = query.filter(
+                models.Task.status == models.StatusEnum(status)
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid status")
+
+    # 🔎 Search by title or description
+    if search:
+        query = query.filter(
+            or_(
+                models.Task.title.ilike(f"%{search}%"),
+                models.Task.description.ilike(f"%{search}%")
+            )
+        )
+
+    # 🔎 Sorting
+    if sort:
+        if sort == "due_asc":
+            query = query.order_by(models.Task.due_date.asc())
+        elif sort == "due_desc":
+            query = query.order_by(models.Task.due_date.desc())
+        elif sort == "priority_asc":
+            query = query.order_by(models.Task.priority.asc())
+        elif sort == "priority_desc":
+            query = query.order_by(models.Task.priority.desc())
+        elif sort == "created_desc":
+            query = query.order_by(models.Task.created_at.desc())
+        else:
+            raise HTTPException(status_code=400, detail="Invalid sort option")
+
+    return query.all()
 
 @app.post("/tasks")
 def create_task(task: TaskCreate,
